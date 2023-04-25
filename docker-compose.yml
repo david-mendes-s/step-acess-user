@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: my-finance
+    ports:
+      - 3333:3333
+    volumes:
+      - .:/home/node/app
+  db:
+    image: postgres
+    restart: always
+    container_name: database-my-finance
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: db-my-finance
+      POSTGRES_PASSWORD: qwe12345
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+    driver: local
