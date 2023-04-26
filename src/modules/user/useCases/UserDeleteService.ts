@@ -1,21 +1,20 @@
 
-import AppError from "../../../provider/error";
+import { inject, injectable } from "tsyringe";
 import IUserRepository from "../repository/IUserRepository";
 
+@injectable()
 export default class UserDeleteService {
 
-    userRepository:IUserRepository;
-
-    constructor(userRepository: IUserRepository){
-        this.userRepository = userRepository;
-    }
-
+    constructor(
+        @inject('UserRepositoryDataBase')
+        private userRepository: IUserRepository
+    ){}
     async execute(email:string){
 
         const user = await this.userRepository.findByEmail(email);
 
         if(!user){
-            throw new AppError('Usuário não existe');
+            throw new Error('Usuário não existe');
         }
 
         return await this.userRepository.delete(email);

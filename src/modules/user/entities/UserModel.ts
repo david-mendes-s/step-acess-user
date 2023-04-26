@@ -1,6 +1,7 @@
 import {randomUUID} from 'crypto';
+import { User as UserModelPrimas } from '@prisma/client';
 
-export default class User {
+export default class User{
     readonly id?:string;
     name: string;
     email: string;
@@ -14,4 +15,6 @@ export default class User {
         this.email = email;
         this.password = password;
     }
+    createdAt?: Date;
+    updatedAt?: Date;
 }

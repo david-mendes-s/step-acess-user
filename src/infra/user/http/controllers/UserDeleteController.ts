@@ -1,19 +1,17 @@
 import {Request, Response} from 'express';
-import memory from '../../../../provider/memory';
 import UserDeleteService from '../../../../modules/user/useCases/UserDeleteService';
+import { container } from 'tsyringe';
 
 export default class UserDeleteController {
     async delete(request:Request, response:Response){
-        try{
-            const { email } = request.body;
-        
-            const users = new UserDeleteService(memory);
+      
+        const { email } = request.body;
+    
+        const users = container.resolve(UserDeleteService);
 
-            await users.execute(email);
+        await users.execute(email);
 
-            return response.status(200).json({message: 'usuário deletado com sucesso'});
-        }catch(err: any){
-            return response.status(err.statusCode).json(err.message);
-        }
+        return response.status(200).json({message: 'usuário deletado com sucesso'});
+       
     }
 }

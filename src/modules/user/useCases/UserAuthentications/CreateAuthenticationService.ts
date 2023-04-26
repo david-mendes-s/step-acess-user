@@ -2,14 +2,20 @@ import {compare} from 'bcrypt';
 import {inject, injectable} from 'tsyringe';
 import {sign} from 'jsonwebtoken';
 
-import AppError from "../../../../provider/error";
 import IUserRepository from "../../repository/IUserRepository";
-import IRefreshToken from '../../../refreshToken/repository/IRefreshToken';
+import auth from '../../../../config/auth';
+import IRefreshTokenRepository from '../../../refresh_token/repository/IRefreshTokenRepository';
+import IDateProvider from '../../../../provider/DateProvider/IDateProvider';
+
 
 interface IResponse {
-    id:string,
-    email:string,
-    name:string
+    token: string,
+    user: {
+        id:string,
+        email:string,
+        name:string
+    }
+    refresh_token: string
 }
 
 @injectable()
@@ -19,8 +25,12 @@ export default class CreateAuthenticationService {
     constructor(
         @inject('UserRepositoryDataBase')
         private userRepository: IUserRepository, 
-        @inject('RefreshTokenDataBase')
-        private refreshTokenRepository:IRefreshToken
+
+        @inject('RefreshTokenRepositoryDataBase')
+        private refreshTokenRepository: IRefreshTokenRepository,
+
+        @inject('DayJSDateProvider')
+        private dayJSDateProvider: IDateProvider    
     ){}
 
     async execute(email:string, password:string){
@@ -29,7 +39,7 @@ export default class CreateAuthenticationService {
         const user = await this.userRepository.findByEmail(email);
 
         if(!user){
-            throw new AppError("Usuário ou senha incorreta!");
+            throw new Error("Usuário ou senha incorreta!");
         }
 
         //Verificar se a senha da match com o email informado
@@ -37,27 +47,42 @@ export default class CreateAuthenticationService {
         const passwordMatch = await compare(password, user.password);
 
         if(!passwordMatch){
-            throw new AppError("Usuário ou senha incorreta!");
+            throw new Error("Usuário ou senha incorreta!");
         }
 
         //Criar token de usuário
 
-        const token = sign({}, "10bbec39-83fa-4152-bbc8-24bb90595cb6", {
+        const token = sign({}, auth.secret_token, {
             subject: user.id,
-            expiresIn: "20s"
+            expiresIn: auth.expires_in_token
         });
 
+        //criação do refresh token
+        const refresh_token = sign({email}, auth.secret_refresh_token, {
+            subject: user.id,
+            expiresIn: auth.expires_in_refresh_token
+        }); 
+
+        const refresh_token_expires_date = this.dayJSDateProvider.addDays(auth.expires_refresh_token_days);
+
+        await this.refreshTokenRepository.create({
+            user_id: user.id,
+            refresh_token: refresh_token, 
+            expires_date: refresh_token_expires_date
+        });
+        //fim da criação do refresh token
+
         const user_data:IResponse  = {
-            id: user.id!,
-            email: user.email,
-            name: user.name
+            token,
+            user: {
+                id: user.id!,
+                email: user.email,
+                name: user.name
+            },
+            refresh_token
         } 
 
-        await this.refreshTokenRepository.delete(user_data.id);
-
-        const refreshToken = await this.refreshTokenRepository.create(user_data.id);
-
-        return {user_data, token, refreshToken};
+        return user_data;
 
     }
 }

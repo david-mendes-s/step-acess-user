@@ -1,13 +1,14 @@
 
+import { inject, injectable } from "tsyringe";
 import IUserRepository from "../repository/IUserRepository";
 
+@injectable()
 export default class UserListService {
 
-    userRepository:IUserRepository;
-
-    constructor(userRepository: IUserRepository){
-        this.userRepository = userRepository;
-    }
+    constructor(
+        @inject('UserRepositoryDataBase')
+        private userRepository: IUserRepository
+    ){}
 
     async execute(){
         const findUsers = await this.userRepository.find();

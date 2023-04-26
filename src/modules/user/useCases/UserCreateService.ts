@@ -1,21 +1,23 @@
-import AppError from "../../../provider/error";
+import { inject, injectable } from "tsyringe";
 import UserCreateDTO from "../dto/UserCreateDTO";
 import IUserRepository from "../repository/IUserRepository";
 
+@injectable()
 export default class UserService {
 
-    userRepository:IUserRepository;
+ 
 
-    constructor(userRepository: IUserRepository){
-        this.userRepository = userRepository;
-    }
+    constructor(
+        @inject('UserRepositoryDataBase')
+        private userRepository: IUserRepository
+    ){}
 
     async execute({name, email, password}:UserCreateDTO){
 
         const user = await this.userRepository.findByEmail(email);
 
         if(user){    
-            throw new AppError('Usuário já cadastrado!!!');
+            throw new Error('Usuário já cadastrado!!!');
         }
 
         const createUsers = await this.userRepository.create({name, email, password});

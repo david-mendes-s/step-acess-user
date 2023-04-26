@@ -1,27 +1,42 @@
 import { Request, Response, NextFunction } from "express";
 import { verify } from 'jsonwebtoken';
+import auth from "../../../../config/auth";
+import RefreshTokenRepositoryDataBase from "../../../refresh_token/repository/RefreshTokenRepositoryDataBase";
 
-export default function ensureAuthentication(request:Request, response:Response, next:NextFunction){
-    const authToken = request.headers.authorization;
+interface IPayload {
+    sub:string;
+}
 
-    if(!authToken){
-        return response.status(401).json(
-            {message: 'você não tem permissão para acessar essa rota'}
-        )
-    }
-
-    const [, token] = authToken.split(" ");
-
-    try{
-        verify(token, "10bbec39-83fa-4152-bbc8-24bb90595cb6");
-
-        return next();
-    }catch(err){
-        return response.status(401).json(
-            {message: 'token inválido'}
-        )
-    }
+export default async function ensureAuthentication(request:Request, response:Response, next:NextFunction){
     
-
-
+    
+        const authToken = request.headers.authorization;
+    
+        const refreshTokenRepositoryDataBase = new RefreshTokenRepositoryDataBase();
+        
+        if(!authToken){
+            throw new Error('você não tem permissão para acessar essa rota');    
+        }
+    
+        const [,token] = authToken.split(" ");
+        
+            console.log("entrou "+token)
+            const { sub } = verify(
+                token, auth.secret_refresh_token
+            ) as IPayload;
+            
+            console.log(sub)
+            const user = await refreshTokenRepositoryDataBase.findByUserIdAndRefreshToken(sub, token);
+                
+            
+            if(!user){
+                throw new Error('token não existe');
+            }
+    
+        /* request.user = {
+            id: user_id
+        } */
+    
+        return next();
+    
 }

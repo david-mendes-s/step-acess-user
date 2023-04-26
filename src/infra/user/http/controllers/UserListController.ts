@@ -1,10 +1,10 @@
 import {Request, Response} from 'express';
 import UserListService from '../../../../modules/user/useCases/UserListService';
-import memory from '../../../../provider/memory';
+import { container } from 'tsyringe';
 
 export default class UserListController {
     async index(request:Request, response:Response){
-        const users = new UserListService(memory);
+        const users = container.resolve(UserListService);
         
         const listUsers = await users.execute();
 
