@@ -20,12 +20,12 @@ export default async function ensureAuthentication(request:Request, response:Res
     
         const [,token] = authToken.split(" ");
         
-            console.log("entrou "+token)
+            
             const { sub } = verify(
                 token, auth.secret_refresh_token
             ) as IPayload;
             
-            console.log(sub)
+            
             const user = await refreshTokenRepositoryDataBase.findByUserIdAndRefreshToken(sub, token);
                 
             
